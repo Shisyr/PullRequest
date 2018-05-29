@@ -1,0 +1,15 @@
+{
+  "name": "filesearch",
+  "version": "1.0.0",
+  "description": "searches for files",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Shisyr Mukhamed",
+  "license": "ISC",
+  "preferGlobal": true,
+  "bin": {
+    "zensoft": "index.js"
+  }
+}
