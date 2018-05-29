@@ -67,59 +67,53 @@ function find_private_pull_requests(username, password, repository)
     if(err) console.log(err);
     if(stdout)
     {
-      var isFound = false;
       stdout = JSON.parse(stdout);
-      for(var i = 0;i < stdout.values.length;i++)
+      var name_repos = stdout.values.find(obj => obj.name === repository);
+      if(name_repos)
       {
-        var name_repos = stdout.values[i].name;
-        if(repository == name_repos)
-        {
-          url += "/" + stdout.values[i].slug + "/pullrequests";
-          exec(url, (err, respon, doc)=>{
-            if(err) return console.log(err);
-            respon = JSON.parse(respon);
-            if(respon.size == 0)
+        url += "/" + name_repos.name + "/pullrequests";
+        exec(url, (err, respon, doc)=>{
+          if(err) return console.log(err);
+          respon = JSON.parse(respon);
+          if(respon.size == 0)
+          {
+            console.log("There is no Pull Requests!");
+          }
+          else{
+            var isWritten = false;
+            for(var i = 0;i < respon.values.length;i++)
+            {
+              if(respon.values[i].state === "OPEN")
+              {
+                exec("curl " + respon.values[i].links.self.href, (err, stdout_by_id, stderr) =>{
+                  stdout_by_id = JSON.parse(stdout_by_id);
+                  var objFound = stdout_by_id.participants.find(obj => obj.role === "REVIEWER");
+                  if(objFound)
+                  {
+                    console.log(objFound);
+                    if(objFound.user.username === username && !objFound.approved)
+                    {
+                      console.log("---------------------------------")
+                      console.log("Title: " + stdout_by_id.title);
+                      console.log();
+                      console.log("Description: " + stdout_by_id.description);
+                      console.log();
+                      console.log("Link: " + stdout_by_id.links.html.href);
+                      console.log("---------------------------------");
+                      isWritten = true;
+                    }
+                  }
+                });
+              }
+            }
+            if(!isWritten)
             {
               console.log("There is no Pull Requests!");
             }
-            else{
-              var isWritten = false;
-              for(var i = 0;i < respon.values.length;i++)
-              {
-                if(respon.values[i].state === "OPEN")
-                {
-                  exec("curl " + respon.values[i].links.self.href, (err, stdout_by_id, stderr) =>{
-                    stdout_by_id = JSON.parse(stdout_by_id);
-                    var objFound = stdout_by_id.participants.find(obj => obj.role === "REVIEWER");
-                    if(objFound)
-                    {
-                      console.log(objFound);
-                      if(objFound.user.username === username && !objFound.approved)
-                      {
-                        console.log("---------------------------------")
-                        console.log("Title: " + stdout_by_id.title);
-                        console.log();
-                        console.log("Description: " + stdout_by_id.description);
-                        console.log();
-                        console.log("Link: " + stdout_by_id.links.html.href);
-                        console.log("---------------------------------");
-                        isWritten = true;
-                      }
-                    }
-                  });
-                }
-              }
-              if(!isWritten)
-              {
-                console.log("There is no Pull Requests!");
-              }
-            }
-          });
-          isFound = true;
-          break;
-        }
+          }
+        });
       }
-      if(!isFound)
+      else
       {
         console.log("The Username does not contain such repository!");
       }
