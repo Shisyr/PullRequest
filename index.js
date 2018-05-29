@@ -20,15 +20,35 @@ function find_pull_requests(username, slug_repository)
         }
         else
         {
+          var isWritten = false;
           for(var i = 0;i < stdout.values.length;i++)
           {
-            console.log("---------------------------------")
-            console.log("Title: " + stdout.values[i].title);
-            console.log();
-            console.log("Description: " + stdout.values[i].description);
-            console.log();
-            console.log("Link: " + stdout.values[i].links.html.href);
-            console.log("---------------------------------");
+            if(stdout.values[i].state == "OPEN")
+            {
+              exec("curl " + stdout.values[i].links.self.href, (err, stdout_by_id, stderr) =>{
+                stdout_by_id = JSON.parse(stdout_by_id);
+                var objFound = stdout_by_id.participants.find(obj => obj.role === "REVIEWER");
+                if(objFound)
+                {
+                  console.log(objFound);
+                  if(objFound.user.username === username && !objFound.approved)
+                  {
+                    console.log("---------------------------------")
+                    console.log("Title: " + stdout_by_id.title);
+                    console.log();
+                    console.log("Description: " + stdout_by_id.description);
+                    console.log();
+                    console.log("Link: " + stdout_by_id.links.html.href);
+                    console.log("---------------------------------");
+                    isWritten = true;
+                  }
+                }
+              });
+            }
+          }
+          if(!isWritten)
+          {
+            console.log("There is no Pull Requests with criterias!");
           }
         }
       }
@@ -63,17 +83,36 @@ function find_private_pull_requests(username, password, repository)
               console.log("There is no Pull Requests!");
             }
             else{
+              var isWritten = false;
               for(var i = 0;i < respon.values.length;i++)
               {
-                console.log("---------------------------------")
-                console.log("Title: " + respon.values[i].title);
-                console.log();
-                console.log("Description: " + respon.values[i].description);
-                console.log();
-                console.log("Link: " + respon.values[i].links.html.href);
-                console.log("---------------------------------");
+                if(respon.values[i].state === "OPEN")
+                {
+                  exec("curl " + respon.values[i].links.self.href, (err, stdout_by_id, stderr) =>{
+                    stdout_by_id = JSON.parse(stdout_by_id);
+                    var objFound = stdout_by_id.participants.find(obj => obj.role === "REVIEWER");
+                    if(objFound)
+                    {
+                      console.log(objFound);
+                      if(objFound.user.username === username && !objFound.approved)
+                      {
+                        console.log("---------------------------------")
+                        console.log("Title: " + stdout_by_id.title);
+                        console.log();
+                        console.log("Description: " + stdout_by_id.description);
+                        console.log();
+                        console.log("Link: " + stdout_by_id.links.html.href);
+                        console.log("---------------------------------");
+                        isWritten = true;
+                      }
+                    }
+                  });
+                }
               }
-              console.log();
+              if(!isWritten)
+              {
+                console.log("There is no Pull Requests!");
+              }
             }
           });
           isFound = true;
