@@ -1,8 +1,6 @@
 #! /usr/bin/env node
 var exec = require('child_process').exec;
 
-
-
 function find_pull_requests(username, slug_repository)
 {
   var url = 'curl https://api.bitbucket.org/2.0/repositories/' + username + '/' + slug_repository + '/pullrequests';
@@ -22,35 +20,15 @@ function find_pull_requests(username, slug_repository)
         }
         else
         {
-          var isWritten = false;
           for(var i = 0;i < stdout.values.length;i++)
           {
-            if(stdout.values[i].state == "OPEN")
-            {
-              exec("curl " + stdout.values[i].links.self.href, (err, stdout_by_id, stderr) =>{
-                stdout_by_id = JSON.parse(stdout_by_id);
-                var objFound = stdout_by_id.participants.find(obj => obj.role === "REVIEWER");
-                if(objFound)
-                {
-                  console.log(objFound);
-                  if(objFound.user.username === username && !objFound.approved)
-                  {
-                    console.log("---------------------------------")
-                    console.log("Title: " + stdout_by_id.title);
-                    console.log();
-                    console.log("Description: " + stdout_by_id.description);
-                    console.log();
-                    console.log("Link: " + stdout_by_id.links.html.href);
-                    console.log("---------------------------------");
-                    isWritten = true;
-                  }
-                }
-              });
-            }
-          }
-          if(!isWritten)
-          {
-            console.log("There is no Pull Requests with criterias!");
+            console.log("---------------------------------")
+            console.log("Title: " + stdout.values[i].title);
+            console.log();
+            console.log("Description: " + stdout.values[i].description);
+            console.log();
+            console.log("Link: " + stdout.values[i].links.html.href);
+            console.log("---------------------------------");
           }
         }
       }
@@ -69,53 +47,40 @@ function find_private_pull_requests(username, password, repository)
     if(err) console.log(err);
     if(stdout)
     {
+      var isFound = false;
       stdout = JSON.parse(stdout);
-      var name_repos = stdout.values.find(obj => obj.name === repository);
-      if(name_repos)
+      for(var i = 0;i < stdout.values.length;i++)
       {
-        url += "/" + name_repos.name + "/pullrequests";
-        exec(url, (err, respon, doc)=>{
-          if(err) return console.log(err);
-          respon = JSON.parse(respon);
-          if(respon.size == 0)
-          {
-            console.log("There is no Pull Requests!");
-          }
-          else{
-            var isWritten = false;
-            for(var i = 0;i < respon.values.length;i++)
-            {
-              if(respon.values[i].state === "OPEN")
-              {
-                exec("curl " + respon.values[i].links.self.href, (err, stdout_by_id, stderr) =>{
-                  stdout_by_id = JSON.parse(stdout_by_id);
-                  var objFound = stdout_by_id.participants.find(obj => obj.role === "REVIEWER");
-                  if(objFound)
-                  {
-                    console.log(objFound);
-                    if(objFound.user.username === username && !objFound.approved)
-                    {
-                      console.log("---------------------------------")
-                      console.log("Title: " + stdout_by_id.title);
-                      console.log();
-                      console.log("Description: " + stdout_by_id.description);
-                      console.log();
-                      console.log("Link: " + stdout_by_id.links.html.href);
-                      console.log("---------------------------------");
-                      isWritten = true;
-                    }
-                  }
-                });
-              }
-            }
-            if(!isWritten)
+        var name_repos = stdout.values[i].name;
+        if(repository == name_repos)
+        {
+          url += "/" + stdout.values[i].slug + "/pullrequests";
+          exec(url, (err, respon, doc)=>{
+            if(err) return console.log(err);
+            respon = JSON.parse(respon);
+            if(respon.size == 0)
             {
               console.log("There is no Pull Requests!");
             }
-          }
-        });
+            else{
+              for(var i = 0;i < respon.values.length;i++)
+              {
+                console.log("---------------------------------")
+                console.log("Title: " + respon.values[i].title);
+                console.log();
+                console.log("Description: " + respon.values[i].description);
+                console.log();
+                console.log("Link: " + respon.values[i].links.html.href);
+                console.log("---------------------------------");
+              }
+              console.log();
+            }
+          });
+          isFound = true;
+          break;
+        }
       }
-      else
+      if(!isFound)
       {
         console.log("The Username does not contain such repository!");
       }
